@@ -1,40 +1,92 @@
+// import
 require('dotenv').config();
 const TelegramBot = require('node-telegram-bot-api');
 const express = require('express');
 const cors = require('cors');
+// variables
 
+let stateBot = 0
+const Admin = 1777245435
+
+// init
 const token = process.env.BOT_TOKEN;
-const webAppUrl = 'https://tg-web-app-react-livid.vercel.app/';
-
+const webAppUrl = 'https://tg-shop-react.vercel.app';
+const webAppUrlError = 'https://tg-shop-react.vercel.app/error';
+// app
 const bot = new TelegramBot(token, {polling: true});
 const app = express();
 
 app.use(express.json());
 app.use(cors());
-
+// bot
 bot.on('message', async (msg) => {
     const chatId = msg.chat.id;
     const text = msg.text;
-
-    if(text === '/start') {
-        await bot.sendMessage(chatId, 'Ниже появится кнопка, заполни форму', {
-            reply_markup: {
-                keyboard: [
-                    [{text: 'Заполнить форму', web_app: {url: webAppUrl + '/form'}}]
-                ]
-            }
-        })
-
-        await bot.sendMessage(chatId, 'Заходи в наш интернет магазин по кнопке ниже', {
-            reply_markup: {
-                inline_keyboard: [
-                    [{text: 'Сделать заказ', web_app: {url: webAppUrl}}]
-                ]
-            }
-        })
+    if(text === 'id') {
+        await bot.sendMessage(chatId, chatId)
     }
+    if(text === '/admin'){
+        if(chatId === Admin) {
+            await bot.sendMessage(chatId, 'Админ панель:', {
+                reply_markup: {
+                    inline_keyboard: [
+                      [
+                        { text: 'state 0', callback_data: 'state0' },
+                        { text: 'state 1', callback_data: 'state1' },
+                        { text: 'state 2', callback_data: 'state2' }
+                    ]
+                ]
+            }
+        });
+    } else {
+        await bot.sendMessage(chatId, "Извините вы не являетесь админом")
+    }
+    
+        
+    }
+    if(stateBot === 0) {
+        if(text === '/start') {
+            await bot.sendMessage(chatId, 'Заходи в наш интернет магазин по кнопке ниже', {
+                reply_markup: {
+                    inline_keyboard: [
+                        [{text: 'Сделать заказ', web_app: {url: webAppUrl}}]
+                    ]
+                }
+            })
+        }
+    } if (stateBot === 1) {
+        if(text === '/start') {
+            await bot.sendMessage(chatId, 'извените но сейчас идут работы над сайтом или ботом', {
+                reply_markup: {
+                    inline_keyboard: [
+                        [{text: 'Извините', web_app: {url: webAppUrlError}}]
+                    ]
+                }
+            })
+        }
+    } if (stateBot === 2) {
+        if(text === '/start') {
+            await bot.sendMessage(chatId, 'извените но видимо произошла какая то ошибка и над ней уже работают', {
+            })
+        }
+    }
+    
 });
-
+bot.on('callback_query', (query) => {
+    const chatId = query.message.chat.id;
+    
+    if (query.data === 'state0') {
+        stateBot = 0
+      bot.editmess(chatId, 'переменная 0 выставлена');
+    } else if (query.data === 'state1') {
+        stateBot = 1
+      bot.sendMessage(chatId, 'переменная 1 выставлена');
+    } else if (query.data === 'state2') {
+        stateBot = 2
+      bot.sendMessage(chatId, 'переменная 2 выставлена');
+  }
+  });
+// express
 app.post('/web-data', async (req, res) => {
     const {queryId, products = [], totalPrice} = req.body;
     try {
