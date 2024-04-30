@@ -7,6 +7,7 @@ const cors = require('cors');
 
 let stateBot = 0
 const Admin = 1777245435
+const customTextMessageError = ''
 
 // init
 const token = process.env.BOT_TOKEN;
@@ -19,10 +20,34 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 // bot
+bot.onText(/\/setState (.+)/, (msg, arr) => {
+    const { id } = msg.chat
+
+    if (id === Admin) {
+        stateBot = 3
+        customTextMessageError = arr[1]
+        bot.sendMessage(id, `переменная переведенна в 3 и поставлен текст :` + arr[1])
+    } else {
+        bot.sendMessage(id, 'у вас нет прав на данную команду')
+    }
+})
+
 bot.on('message', async (msg) => {
     const chatId = msg.chat.id;
     const text = msg.text;
-    if(text === 'id') {
+
+    if(text === '/help') {
+        await bot.sendMessage(chatId, 
+            `
+        доступные сейчас команды:
+        /start - сайт
+        /id - узнать id
+        '/admin' - только админ может использовать
+        `)
+    }
+
+
+    if(text === '/id') {
         await bot.sendMessage(chatId, chatId)
     }
     if(text === '/admin'){
@@ -38,8 +63,8 @@ bot.on('message', async (msg) => {
                 ]
             }
         });
-    } else {
-        await bot.sendMessage(chatId, "Извините вы не являетесь админом")
+    } if(chatId !== Admin)  {
+       await bot.sendMessage(chatId, "Извините вы не являетесь админом")
     }
     
         
@@ -66,8 +91,11 @@ bot.on('message', async (msg) => {
         }
     } if (stateBot === 2) {
         if(text === '/start') {
-            await bot.sendMessage(chatId, 'извените но видимо произошла какая то ошибка и над ней уже работают', {
-            })
+            await bot.sendMessage(chatId, 'извените но видимо произошла какая то ошибка и над ней уже работают')
+        }
+    } if (stateBot === 3) {
+        if(text === '/start') {
+            await bot.sendMessage(chatId, customTextMessageError)
         }
     }
     
